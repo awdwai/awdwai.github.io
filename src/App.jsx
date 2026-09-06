@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Nav from './components/Nav/Nav'
 import Hero from './components/Hero/Hero'
 import ContentPanel from './components/ContentPanel/ContentPanel'
@@ -37,8 +37,15 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [armPhase, setArmPhase] = useState('idle')
   const [panelOpen, setPanelOpen] = useState(false)
+  /** Locks panel body/title to the id that finished indexing (guards late onIndexed). */
+  const [panelId, setPanelId] = useState(null)
+  const selectedIdRef = useRef(null)
 
   const ready = useSiteReady(skip3d || sceneReady)
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId
+  }, [selectedId])
 
   useEffect(() => {
     if (skip3d) setSceneReady(true)
@@ -48,27 +55,38 @@ export default function App() {
     (id) => {
       if (!id) return
       setSelectedId(id)
+      selectedIdRef.current = id
 
       if (skip3d || !ready) {
         setArmPhase('open')
+        setPanelId(id)
         setPanelOpen(true)
         return
       }
 
       setPanelOpen(false)
+      setPanelId(null)
       setArmPhase('reaching')
     },
     [ready, skip3d],
   )
 
-  const onReached = useCallback(() => {
+  const onReached = useCallback((indexedId) => {
+    // Ignore stale arrive callbacks if the user clicked another crate mid-index.
+    if (indexedId && selectedIdRef.current !== indexedId) return
+    const id = indexedId ?? selectedIdRef.current
+    if (!id) return
+    setSelectedId(id)
+    setPanelId(id)
     setArmPhase('open')
     setPanelOpen(true)
   }, [])
 
   const closePanel = useCallback(() => {
     setPanelOpen(false)
+    setPanelId(null)
     setSelectedId(null)
+    selectedIdRef.current = null
     setArmPhase('idle')
   }, [])
 
@@ -100,7 +118,7 @@ export default function App() {
       {showFallback ? (
         <PackageFallback onOpen={openSection} activeId={selectedId} />
       ) : null}
-      {panelOpen ? <ContentPanel sectionId={selectedId} onClose={closePanel} /> : null}
+      {panelOpen && panelId ? <ContentPanel sectionId={panelId} onClose={closePanel} /> : null}
       <Footer />
     </div>
   )

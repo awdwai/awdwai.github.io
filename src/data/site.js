@@ -127,16 +127,16 @@ export const site = {
   },
 
   packages: [
-    { id: 'about', label: 'About', short: 'EDU' },
-    { id: 'projects', label: 'Projects', short: 'PRJ' },
-    { id: 'experience', label: 'Experience', short: 'XP' },
-    { id: 'skills', label: 'Skills', short: 'SKL' },
-    { id: 'leadership', label: 'Leadership', short: 'BCE' },
-    { id: 'contact', label: 'Contact', short: 'CON' },
+    { id: 'education', label: 'Education' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'experience', label: 'Experience' },
+    { id: 'skills', label: 'Skills' },
+    { id: 'leadership', label: 'Leadership' },
+    { id: 'contact', label: 'Contact' },
   ],
 
   nav: [
-    { label: 'About', id: 'about' },
+    { label: 'Education', id: 'education' },
     { label: 'Projects', id: 'projects' },
     { label: 'Experience', id: 'experience' },
     { label: 'Skills', id: 'skills' },

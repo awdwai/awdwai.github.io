@@ -2,7 +2,7 @@ import { site } from '../../data/site'
 import './ContentPanel.css'
 
 function SectionBody({ id }) {
-  if (id === 'about') {
+  if (id === 'education') {
     const e = site.education
     return (
       <>

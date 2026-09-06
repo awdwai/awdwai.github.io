@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { site } from '../../data/site'
@@ -6,23 +6,47 @@ import Package from './Package'
 
 const BELT_LEN = 7.2
 const BELT_W = 1.15
-const SPEED = 0.55
-const PICKUP_X = 0.15
+const SPEED_IDLE = 0.55
+const SPEED_BOOST = 1.85
+const SPEED_REVERSE = -1.55
+const STATION_X = 0.15
+const ARRIVE_EPS = 0.09
+
+function wrapPhase(p) {
+  let x = p % BELT_LEN
+  if (x < 0) x += BELT_LEN
+  return x
+}
+
+function packageX(offset, phase) {
+  const raw = offset + phase
+  return ((raw % BELT_LEN) + BELT_LEN) % BELT_LEN - BELT_LEN / 2
+}
+
+/** Shortest signed belt travel from `from` → `to` on a looping line. */
+function signedBeltDelta(from, to) {
+  let d = to - from
+  if (d > BELT_LEN / 2) d -= BELT_LEN
+  if (d < -BELT_LEN / 2) d += BELT_LEN
+  return d
+}
 
 export default function Conveyor({
   selectedId,
-  paused,
+  indexing,
   ready,
   onSelectPackage,
+  onIndexed,
   packageWorldRefs,
 }) {
-  const beltRef = useRef()
   const groupRefs = useRef({})
   const offsets = useMemo(
     () => site.packages.map((_, i) => (i / site.packages.length) * BELT_LEN - BELT_LEN / 2),
     [],
   )
   const phase = useRef(0)
+  const speed = useRef(SPEED_IDLE)
+  const indexedFor = useRef(null)
   const [hoveredId, setHoveredId] = useState(null)
 
   const iron = useMemo(
@@ -55,23 +79,60 @@ export default function Conveyor({
     [],
   )
 
+  useEffect(() => {
+    // Clear arrive latch on deselect or mid-index reselect so the new id can snap.
+    if (!selectedId || indexedFor.current !== selectedId) {
+      indexedFor.current = null
+    }
+  }, [selectedId])
+
   useFrame((_, dt) => {
-    if (!paused && ready) {
-      phase.current = (phase.current + dt * SPEED) % BELT_LEN
+    if (!ready) return
+
+    const holding = Boolean(selectedId) && !indexing
+    let targetSpeed = SPEED_IDLE
+
+    if (holding) {
+      // Panel open: hard-stop the shared belt phase.
+      speed.current = 0
+      targetSpeed = 0
+    } else if (indexing && selectedId) {
+      const i = site.packages.findIndex((p) => p.id === selectedId)
+      if (i >= 0) {
+        if (indexedFor.current === selectedId) {
+          // Already snapped for this id — stay stopped until panel opens.
+          speed.current = 0
+          targetSpeed = 0
+        } else {
+          const x = packageX(offsets[i], phase.current)
+          const delta = signedBeltDelta(x, STATION_X)
+          // Forward boost if station is ahead; reverse if it's behind.
+          targetSpeed = delta >= 0 ? SPEED_BOOST : SPEED_REVERSE
+          if (Math.abs(delta) < ARRIVE_EPS) {
+            // Snap so the crate sits on the station before the panel opens.
+            phase.current = wrapPhase(STATION_X + BELT_LEN / 2 - offsets[i])
+            indexedFor.current = selectedId
+            speed.current = 0
+            targetSpeed = 0
+            onIndexed?.(selectedId)
+          }
+        }
+      }
     }
 
+    if (!holding) {
+      speed.current = THREE.MathUtils.damp(speed.current, targetSpeed, 4.5, dt)
+      phase.current = wrapPhase(phase.current + dt * speed.current)
+    } else {
+      speed.current = 0
+    }
+
+    // All crates share one phase — never damp a single crate independently.
     site.packages.forEach((pkg, i) => {
       const g = groupRefs.current[pkg.id]
       if (!g) return
 
-      let x
-      if (selectedId === pkg.id) {
-        x = THREE.MathUtils.damp(g.position.x, PICKUP_X, 4, dt)
-      } else {
-        const raw = offsets[i] + phase.current
-        x = ((raw + BELT_LEN / 2) % BELT_LEN) - BELT_LEN / 2
-      }
-
+      const x = packageX(offsets[i], phase.current)
       g.position.set(x, 0.42, 0)
 
       if (packageWorldRefs?.current) {
@@ -111,7 +172,7 @@ export default function Conveyor({
           <boxGeometry args={[0.18, 0.55, BELT_W + 0.3]} />
         </mesh>
 
-        <mesh ref={beltRef} position={[0, 0.34, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={iron}>
+        <mesh position={[0, 0.34, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={iron}>
           <planeGeometry args={[BELT_LEN, BELT_W]} />
         </mesh>
 
@@ -150,7 +211,6 @@ export default function Conveyor({
           <Package
             id={pkg.id}
             label={pkg.label}
-            short={pkg.short}
             position={[0, 0, 0]}
             selected={selectedId === pkg.id}
             hoveredId={hoveredId}

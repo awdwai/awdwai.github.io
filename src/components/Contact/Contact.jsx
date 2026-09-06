@@ -15,7 +15,6 @@ export default function PackageFallback({ onOpen, activeId }) {
               className={`fallback__item${activeId === pkg.id ? ' fallback__item--active' : ''}`}
               onClick={() => onOpen(pkg.id)}
             >
-              <span className="fallback__code">{pkg.short}</span>
               <span className="fallback__label">{pkg.label}</span>
             </button>
           </li>

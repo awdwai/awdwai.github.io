@@ -1,6 +1,6 @@
 # Shrest Bijakal — Personal Site
 
-Factory-floor portfolio: an iron/orange industrial bay where resume sections travel the conveyor as packages. After load, click a crate — the robotic arm reaches, opens it, and the section panel appears.
+Factory-floor portfolio: an iron/orange industrial bay where resume sections travel the conveyor as packages. After load, click a crate — the belt indexes it to the station and the section panel opens.
 
 ## Stack
 
@@ -25,13 +25,19 @@ npm run preview
 
 Pushes to `developing` build and deploy via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-Site URL: https://awdwai.github.io/
+Target site URL: https://ShrestBijakal.github.io/
 
-Repo is `awdwai.github.io` (user site). In **Settings → Pages**, set **Source: GitHub Actions** (already switched if the API call succeeded).
+GitHub only serves `*.github.io` user/org sites when the account or org login matches. To leave `awdwai.github.io` for that hostname:
+
+1. Create a GitHub organization named **ShrestBijakal** (https://github.com/organizations/new), **or** rename the `awdwai` user to `ShrestBijakal`.
+2. Move/rename this repo to `ShrestBijakal/ShrestBijakal.github.io`.
+3. Keep Pages source as **GitHub Actions**.
+
+Until that exists, the live deploy remains at https://awdwai.github.io/.
 
 ## Content
 
-Resume copy lives in [`src/data/site.js`](src/data/site.js). Project Live/GitHub links are `null` until you add URLs. Phone is omitted by default.
+Resume copy lives in [`src/data/site.js`](src/data/site.js). Each crate paints its section `label` (Education, Projects, …), matching nav and the ContentPanel title. Project Live/GitHub links are `null` until you add URLs. Phone is omitted by default.
 
 ## 3D model credit
 

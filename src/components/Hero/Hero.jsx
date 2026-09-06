@@ -54,7 +54,7 @@ export default function Hero({
           <p className="hero__status hero__status--ready" role="status">
             {reducedMotion || isMobile
               ? 'Select a package below or use the nav.'
-              : 'Click a package on the belt — the arm will open it.'}
+              : 'Click a package on the belt — the line indexes it open.'}
           </p>
         )}
       </div>

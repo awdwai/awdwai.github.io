@@ -123,7 +123,6 @@ function FactoryScene({
           ready={ready}
           selectedId={selectedId}
           armPhase={armPhase}
-          onReached={onReached}
           packageWorldRefs={packageWorldRefs}
           onModelReady={() => {
             modelReady.current = true
@@ -134,9 +133,10 @@ function FactoryScene({
 
       <Conveyor
         selectedId={selectedId}
-        paused={Boolean(selectedId)}
+        indexing={armPhase === 'reaching'}
         ready={ready}
         onSelectPackage={onSelectPackage}
+        onIndexed={onReached}
         packageWorldRefs={packageWorldRefs}
       />
 

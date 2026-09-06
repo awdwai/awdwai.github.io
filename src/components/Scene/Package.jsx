@@ -4,12 +4,23 @@ import * as THREE from 'three'
 
 const BOX = [0.55, 0.38, 0.42]
 
-/** Paint a shipping label into the crate's front-face texture. */
+function fitPlaqueFont(ctx, text, maxWidth, maxSize = 58, minSize = 26) {
+  let size = maxSize
+  while (size > minSize) {
+    ctx.font = `700 ${size}px "Barlow Condensed", "Arial Narrow", sans-serif`
+    if (ctx.measureText(text).width <= maxWidth) break
+    size -= 2
+  }
+  return size
+}
+
+/** Paint the section name into the crate's front-face texture. */
 function makeCrateFaceTexture(text, { selected = false } = {}) {
   const canvas = document.createElement('canvas')
   canvas.width = 512
   canvas.height = 384
   const ctx = canvas.getContext('2d')
+  const label = String(text || '').toUpperCase()
 
   const body = selected ? '#2a2218' : '#1c1e22'
   ctx.fillStyle = body
@@ -37,11 +48,13 @@ function makeCrateFaceTexture(text, { selected = false } = {}) {
   ctx.fillStyle = '#b8bec6'
   ctx.fillRect(px + 14, py + 14, pw - 28, ph - 28)
 
+  const maxTextW = pw - 36
+  const size = fitPlaqueFont(ctx, label, maxTextW)
   ctx.fillStyle = '#121418'
-  ctx.font = '700 72px "Barlow Condensed", "Arial Narrow", sans-serif'
+  ctx.font = `700 ${size}px "Barlow Condensed", "Arial Narrow", sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(String(text || '').toUpperCase(), canvas.width / 2, canvas.height / 2 - 4)
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2 - 4)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
@@ -53,7 +66,6 @@ function makeCrateFaceTexture(text, { selected = false } = {}) {
 export default function Package({
   id,
   label,
-  short,
   position,
   selected,
   hoveredId,
@@ -65,11 +77,10 @@ export default function Package({
   const [localHover, setLocalHover] = useState(false)
   const hovered = hoveredId === id || localHover
   const accent = selected ? '#ff7a1a' : hovered ? '#e85d04' : '#4a5058'
-  const code = short || label
 
   const faceTexture = useMemo(
-    () => makeCrateFaceTexture(code, { selected }),
-    [code, selected],
+    () => makeCrateFaceTexture(label, { selected }),
+    [label, selected],
   )
 
   useEffect(() => () => faceTexture.dispose(), [faceTexture])
@@ -129,8 +140,9 @@ export default function Package({
           e.stopPropagation()
         }}
       >
-        <mesh visible={false} userData={{ packageHit: id }} position={[0, 0.05, 0]}>
-          <boxGeometry args={[BOX[0] * 1.55, BOX[1] * 1.8, BOX[2] * 1.7]} />
+        {/* Hit volume ≈ visible crate so neighbors never steal picks while the belt moves */}
+        <mesh visible={false} userData={{ packageHit: id }} position={[0, 0, 0]}>
+          <boxGeometry args={[BOX[0] * 1.02, BOX[1] * 1.08, BOX[2] * 1.02]} />
         </mesh>
         <mesh castShadow receiveShadow material={materials.box}>
           <boxGeometry args={BOX} />

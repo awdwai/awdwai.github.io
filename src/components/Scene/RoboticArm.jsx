@@ -21,6 +21,8 @@ const MAX_REACH = L1 + L2 - 0.04
 const MIN_REACH = Math.abs(L1 - L2) + 0.1
 /** Comfortable folded reach — stretches toward MAX as cursor leaves screen center. */
 const COMFORT_REACH = L1 * 0.92 + L2 * 0.42
+/** Fixed station aim while indexing or panel open — no pointer/crate tracking. */
+const STATION_READY = new THREE.Vector3(0.15, 0.6, 1.15)
 
 const STRETCH_INNER = 0.18
 const STRETCH_OUTER = 0.72
@@ -197,10 +199,7 @@ function rayToReachTarget(ray, shoulderWorld, out, radius, screenDist = 0) {
 /** Site-built 6-axis industrial arm: iron / jet-black body with orange accents. */
 export default function RoboticArm({
   ready,
-  selectedId,
   armPhase,
-  onReached,
-  packageWorldRefs,
   onModelReady,
 }) {
   const mats = useArmMaterials()
@@ -216,8 +215,6 @@ export default function RoboticArm({
   const joints = { baseYaw, shoulder, elbow, wrist, tip, gripL, gripR }
 
   const targets = useRef({ ...IDLE })
-  const reachTimer = useRef(0)
-  const lastPhase = useRef(armPhase)
   const pointer = useRef({ x: 0, y: 0 })
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const ndc = useMemo(() => new THREE.Vector2(), [])
@@ -244,48 +241,21 @@ export default function RoboticArm({
     return () => window.removeEventListener('pointermove', onMove)
   }, [])
 
-  useEffect(() => {
-    if (armPhase === 'reaching' && lastPhase.current !== 'reaching') {
-      reachTimer.current = 0
-    }
-    lastPhase.current = armPhase
-  }, [armPhase])
-
   useFrame((_, dt) => {
-    ndc.set(pointer.current.x, pointer.current.y)
-    raycaster.setFromCamera(ndc, camera)
-    const screenDist = Math.min(1, Math.hypot(pointer.current.x, pointer.current.y))
-    reachRadius.current = reachRadiusFromPointer(pointer.current.x, pointer.current.y)
-
     if (!ready) {
       targets.current = { ...IDLE }
-    } else if (armPhase === 'reaching' || armPhase === 'open') {
-      const world = packageWorldRefs?.current?.[selectedId]
-      let aim
-      if (world) {
-        aim = new THREE.Vector3(world.x, world.y + 0.2, world.z)
-        const fromShoulder = aim.clone().sub(shoulderWorld)
-        const dist = fromShoulder.length()
-        if (dist > MAX_REACH) {
-          aim.copy(shoulderWorld).addScaledVector(fromShoulder.normalize(), MAX_REACH)
-        }
-      } else {
-        rayToReachTarget(
-          raycaster.ray,
-          shoulderWorld,
-          cursorTarget.current,
-          reachRadius.current,
-          screenDist,
-        )
-        aim = cursorTarget.current.clone()
-      }
-      targets.current = solveReach(aim, armPhase === 'open', screenDist)
-
-      if (armPhase === 'reaching') {
-        reachTimer.current += dt
-        if (reachTimer.current > 1.05) onReached?.()
-      }
+    } else if (armPhase === 'reaching') {
+      // Station-ready while belt indexes — ignore pointer.
+      targets.current = solveReach(STATION_READY, false, 0)
+    } else if (armPhase === 'open') {
+      // Panel open: same ready pose, gripper open — no pointer or crate tracking.
+      targets.current = solveReach(STATION_READY, true, 0)
     } else {
+      // Idle only: pointer-aim.
+      ndc.set(pointer.current.x, pointer.current.y)
+      raycaster.setFromCamera(ndc, camera)
+      const screenDist = Math.min(1, Math.hypot(pointer.current.x, pointer.current.y))
+      reachRadius.current = reachRadiusFromPointer(pointer.current.x, pointer.current.y)
       rayToReachTarget(
         raycaster.ray,
         shoulderWorld,
