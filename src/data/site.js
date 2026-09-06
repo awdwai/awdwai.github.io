@@ -1,5 +1,5 @@
 export const site = {
-  name: 'Shrest Bijakal',
+  name: 'shrestbijakal',
   tagline: 'Builder · researcher · engineer — assembling the next signal.',
   location: 'Sugar Land, TX',
   email: 'shrestbijakal@gmail.com',

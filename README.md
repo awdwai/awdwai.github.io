@@ -1,4 +1,4 @@
-# Shrest Bijakal — Personal Site
+# shrestbijakal
 
 Factory-floor portfolio: an iron/orange industrial bay where resume sections travel the conveyor as packages. After load, click a crate — the belt indexes it to the station and the section panel opens.
 

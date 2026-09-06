@@ -5,7 +5,7 @@ export default function Nav({ onOpen, activeId }) {
   return (
     <header className="nav">
       <a className="nav__brand" href="#top" aria-label={`${site.name} home`}>
-        SB
+        shrestbijakal
       </a>
       <nav className="nav__links" aria-label="Primary">
         {site.nav.map((item) => (
