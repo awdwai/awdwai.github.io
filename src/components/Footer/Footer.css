@@ -1,0 +1,32 @@
+.footer {
+  position: relative;
+  z-index: 5;
+  padding: 1.5rem clamp(1rem, 3vw, 2rem) 2rem;
+  border-top: 1px solid var(--border-soft);
+  background: rgba(8, 8, 9, 0.85);
+}
+
+.footer__brand {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.65rem;
+}
+
+.footer__credit {
+  font-size: 0.85rem;
+  color: var(--dim);
+  max-width: 52rem;
+  line-height: 1.5;
+}
+
+.footer__credit a {
+  color: var(--orange);
+}
+
+.footer__note {
+  color: var(--dim);
+  font-size: 0.8rem;
+}
