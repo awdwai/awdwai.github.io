@@ -21,6 +21,14 @@ npm run build
 npm run preview
 ```
 
+## GitHub Pages
+
+Pushes to `developing` build and deploy via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+Site URL: https://awdwai.github.io/
+
+Repo is `awdwai.github.io` (user site). In **Settings → Pages**, set **Source: GitHub Actions** (already switched if the API call succeeded).
+
 ## Content
 
 Resume copy lives in [`src/data/site.js`](src/data/site.js). Project Live/GitHub links are `null` until you add URLs. Phone is omitted by default.
